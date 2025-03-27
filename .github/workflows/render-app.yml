@@ -82,7 +82,12 @@ jobs:
           bundle_dir='${{ runner.temp }}/bundle'
 
           echo "${{steps.vendor-bundle.outputs.bundle-lock-file}}" >"${lock_file}"
-          imgpkg pull --lock "${lock_file}" --output "${bundle_dir}"
+
+          imgpkg pull \
+            --registry-username '${{ secrets.PRIVATE_REGISTRY_USERNAME }}' \
+            --registry-password '${{ secrets.PRIVATE_REGISTRY_PASSWORD }}' \
+            --lock "${lock_file}" \
+            --output "${bundle_dir}"
 
           echo "bundle-dir=${bundle_dir}" >>"${GITHUB_OUTPUT}"
           echo "image-lock-file=${lock_file}" >>"${GITHUB_OUTPUT}"
