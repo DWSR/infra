@@ -52,6 +52,9 @@ jobs:
             --annotations 'ref=${{ inputs.ref }}' \
             --annotations 'repository=DWSR/${{ inputs.repo-name }}' \
             '${{ inputs.bundle-with-digest }}'
+        env:
+          GITHUB_TOKEN: "${{ github.token }}"
+          IMGPKG_ACTIVE_KEYCHAINS: github
       - name: Vendor bundle into private registry
         id: vendor-bundle
         run: |
@@ -69,6 +72,9 @@ jobs:
             cat imgpkg.lock.yml
             echo 'EOF'
           } >>"${GITHUB_OUTPUT}"
+        env:
+          GITHUB_TOKEN: "${{ github.token }}"
+          IMGPKG_ACTIVE_KEYCHAINS: github
       - name: Download bundle
         id: download-bundle
         run: |
@@ -80,6 +86,9 @@ jobs:
 
           echo "bundle-dir=${bundle_dir}" >>"${GITHUB_OUTPUT}"
           echo "image-lock-file=${lock_file}" >>"${GITHUB_OUTPUT}"
+        env:
+          GITHUB_TOKEN: "${{ github.token }}"
+          IMGPKG_ACTIVE_KEYCHAINS: github
       - name: Render manifests with updated image references
         id: render
         run: |
