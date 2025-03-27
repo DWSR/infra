@@ -57,7 +57,7 @@ jobs:
         run: |
           imgpkg copy \
           --bundle '${{ inputs.bundle-with-digest }}' \
-            --to-repo '${{ secrets.PRIVATE_REGISTRY_URL }}/${{ inputs.repo-name }}' \
+            --to-repo '${{ secrets.PRIVATE_REGISTRY }}/${{ inputs.repo-name }}' \
             --registry-username '${{ secrets.PRIVATE_REGISTRY_USERNAME }}' \
             --registry-password '${{ secrets.PRIVATE_REGISTRY_PASSWORD }}' \
             --cosign-signatures \
