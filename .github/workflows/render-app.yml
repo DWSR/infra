@@ -24,6 +24,7 @@ permissions:
 
 jobs:
   check-actors:
+    name: Check Authorized Actors
     uses: DWSR/actions/.github/workflows/authorized-actors.yml@main
 
   copy-bundle:
@@ -126,7 +127,7 @@ jobs:
 
           mkdir -p "live/k8s/apps/${app_name}"
 
-          echo "${{ steps.copy-bundle.outputs.manifests }}" >'live/k8s/apps/${{ inputs.repo-name }}/manifests.yaml'
+          echo "${{ steps.copy-bundle.outputs.manifests }}" >"live/k8s/apps/${app_name}/manifests.yaml"
 
       - name: Create branch and commit
         run: |
