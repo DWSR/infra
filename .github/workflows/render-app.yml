@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   check-actors:
-    uses: DWSR/actions/.github/workflows/authorized-actors.yml
+    uses: DWSR/actions/.github/workflows/authorized-actors.yml@main
 
   copy-bundle:
     name: Copy Bundle to Registry
