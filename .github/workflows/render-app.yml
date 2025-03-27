@@ -1,0 +1,123 @@
+name: Update app
+
+run-name: "Update ${{ inputs.repo-name }} to ${{ inputs.ref }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo-name:
+        description: The name of the repository to update manifests from. Assumed to be in the DWSR org.
+        required: true
+        type: string
+      ref:
+        description: The ref of the repository to use when updating.
+        required: true
+        type: string
+      bundle-with-digest:
+        description: The manifest bundle reference, including digest.
+        type: string
+        required: true
+
+permissions:
+  packages: read
+  contents: write
+
+jobs:
+  check-actors:
+    uses: DWSR/actions/.github/workflows/authorized-actors.yml
+
+  copy-bundle:
+    name: Copy Bundle to Registry
+    needs: [check-actors]
+    runs-on: ubuntu-latest
+    outputs:
+      manifests: "${{ steps.render.outputs.manifests }}"
+    steps:
+      - name: Install mise
+        uses: jdx/mise-action@c5d0c300fa141a481a2fce49a31e5bacbe65125e # main
+        with:
+          mise_toml: |
+            [tools]
+              kbld   = "0.45.0"
+              imgpkg = "0.45.0"
+              cosign = "2.4.3"
+          experimental: true
+        env:
+          GITHUB_TOKEN: "${{ github.token }}"
+      - name: Verify bundle
+        run: |
+          cosign verify \
+            --certificate-oidc-issuer https://token.actions.githubcontent.com \
+            --certificate-identity-regexp '^https:\/\/github\.com\/DWSR\/actions.*' \
+            --annotations 'ref=${{ inputs.ref }}' \
+            --annotations 'repository=DWSR/${{ inputs.repo-name }}' \
+            '${{ inputs.bundle-with-digest }}'
+      - name: Vendor bundle into private registry
+        id: vendor-bundle
+        run: |
+          imgpkg copy \
+          --bundle '${{ inputs.bundle-with-digest }}' \
+            --to-repo '${{ secrets.PRIVATE_REGISTRY_URL }}/${{ inputs.repo-name }}' \
+            --registry-username '${{ secrets.PRIVATE_REGISTRY_USERNAME }}' \
+            --registry-password '${{ secrets.PRIVATE_REGISTRY_PASSWORD }}' \
+            --cosign-signatures \
+            --include-non-distributable-layers \
+            --lock-output imgpkg.lock.yml
+          
+          {
+            echo 'bundle-lock-file<<EOF'
+            cat imgpkg.lock.yml
+            echo 'EOF'
+          } >>"${GITHUB_OUTPUT}"
+      - name: Download bundle
+        id: download-bundle
+        run: |
+          lock_file='${{ runner.temp }}/imgpkg.lock.yaml'
+          bundle_dir='${{ runner.temp }}/bundle'
+
+          echo "${{steps.vendor-bundle.outputs.bundle-lock-file}}" >"${lock_file}"
+          imgpkg pull --lock "${lock_file}" --output "${bundle_dir}"
+
+          echo "bundle-dir=${bundle_dir}" >>"${GITHUB_OUTPUT}"
+          echo "image-lock-file=${lock_file}" >>"${GITHUB_OUTPUT}"
+      - name: Render manifests with updated image references
+        id: render
+        run: |
+          manifest_file='${{ runner.temp }}/manifests.yaml'
+
+          kbld \
+            --sort=false \
+            --build=false \
+            --file '${{ steps.download-bundle.outputs.bundle-dir }}/manifests.yaml' \
+            --file '${{ steps.download-bundle.outputs.images-lock-file }}' >"${manifest_file}"
+
+          {
+            echo 'manifests<<EOF'
+            cat "${manifest_file}"
+            echo 'EOF'
+          } >>"${GITHUB_OUTPUT}"
+
+  open-pr:
+    name: Open Pull Request to Update App
+    needs: [copy-bundle]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Write updated manifests
+        run: |
+          app_name="$(echo '${{ inputs.repo-name }}' | sed s/kube-//)"
+
+          mkdir -p "live/k8s/apps/${app_name}"
+
+          echo "${{ steps.copy-bundle.outputs.manifests }}" >'live/k8s/apps/${{ inputs.repo-name }}/manifests.yaml'
+
+      - name: Create branch and commit
+        run: |
+          git checkout -b "update-${{ inputs.repo-name }}-${{ inputs.ref }}"
+          git commit -m "chore: update manifests for ${{ inputs.repo-name }} to ${{ inputs.ref }}" -a
+          git push origin "update-${{ inputs.repo-name }}-${{ inputs.ref }}"
+
+      - name: Create pull request
+        run: |
+          gh pr create --fill-first 
