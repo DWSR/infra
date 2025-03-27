@@ -58,9 +58,11 @@ jobs:
       - name: Vendor bundle into private registry
         id: vendor-bundle
         run: |
+          app_name="$(echo '${{ inputs.repo-name }}' | sed s/kube-//)"
+
           imgpkg copy \
-          --bundle '${{ inputs.bundle-with-digest }}' \
-            --to-repo '${{ secrets.PRIVATE_REGISTRY }}/${{ inputs.repo-name }}' \
+            --bundle '${{ inputs.bundle-with-digest }}' \
+            --to-repo "${{ vars.PRIVATE_REGISTRY }}/${app_name}" \
             --registry-username '${{ secrets.PRIVATE_REGISTRY_USERNAME }}' \
             --registry-password '${{ secrets.PRIVATE_REGISTRY_PASSWORD }}' \
             --cosign-signatures \
@@ -103,7 +105,7 @@ jobs:
             --sort=false \
             --build=false \
             --file '${{ steps.download-bundle.outputs.bundle-dir }}/manifests.yaml' \
-            --file '${{ steps.download-bundle.outputs.images-lock-file }}' >"${manifest_file}"
+            --file '${{ steps.download-bundle.outputs.image-lock-file }}' >"${manifest_file}"
 
           {
             echo 'manifests<<EOF'
