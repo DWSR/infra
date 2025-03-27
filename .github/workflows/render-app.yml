@@ -47,7 +47,7 @@ jobs:
       - name: Verify bundle
         run: |
           cosign verify \
-            --certificate-oidc-issuer https://token.actions.githubcontent.com \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-identity-regexp '^https:\/\/github\.com\/DWSR\/actions.*' \
             --annotations 'ref=${{ inputs.ref }}' \
             --annotations 'repository=DWSR/${{ inputs.repo-name }}' \
