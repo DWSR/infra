@@ -145,7 +145,7 @@ jobs:
           git checkout -b "update-${{ inputs.repo-name }}-${{ inputs.ref }}"
 
           mkdir -p "live/k8s/apps/${app_name}"
-          echo "${{ steps.copy-bundle.outputs.manifests }}" >"live/k8s/apps/${app_name}/manifests.yaml"
+          echo "${{ needs.copy-bundle.outputs.manifests }}" >"live/k8s/apps/${app_name}/manifests.yaml"
 
           git add --all
           git commit -m "chore: update manifests for ${{ inputs.repo-name }} to ${{ inputs.ref }}"
