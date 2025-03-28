@@ -123,8 +123,8 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
         with:
-          app-id: "${{ vars.INFRA_BOT_APP_ID }}"
-          private-key: "${{ vars.INFRA_BOT_PRIVATE_KEY }}"
+          app-id: "${{ secrets.INFRA_BOT_APP_ID }}"
+          private-key: "${{ secrets.INFRA_BOT_PRIVATE_KEY }}"
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
