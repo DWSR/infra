@@ -138,18 +138,17 @@ jobs:
           git config --global user.email "${user_id}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-      - name: Write updated manifests
+      - name: Commit updated manifests
         run: |
           app_name="$(echo '${{ inputs.repo-name }}' | sed s/kube-//)"
 
-          mkdir -p "live/k8s/apps/${app_name}"
+          git checkout -b "update-${{ inputs.repo-name }}-${{ inputs.ref }}"
 
+          mkdir -p "live/k8s/apps/${app_name}"
           echo "${{ steps.copy-bundle.outputs.manifests }}" >"live/k8s/apps/${app_name}/manifests.yaml"
 
-      - name: Create branch and commit
-        run: |
-          git checkout -b "update-${{ inputs.repo-name }}-${{ inputs.ref }}"
-          git commit -m "chore: update manifests for ${{ inputs.repo-name }} to ${{ inputs.ref }}" -a
+          git add --all
+          git commit -m "chore: update manifests for ${{ inputs.repo-name }} to ${{ inputs.ref }}"
           git push origin "update-${{ inputs.repo-name }}-${{ inputs.ref }}"
 
       - name: Create pull request
