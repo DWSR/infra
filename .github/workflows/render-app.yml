@@ -70,7 +70,7 @@ jobs:
             --cosign-signatures \
             --include-non-distributable-layers \
             --lock-output imgpkg.lock.yml
-          
+
           {
             echo 'bundle-lock-file<<EOF'
             cat imgpkg.lock.yml
@@ -157,6 +157,6 @@ jobs:
 
       - name: Create pull request
         run: |
-          gh pr create --fill-first 
+          gh pr create --fill-first
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
